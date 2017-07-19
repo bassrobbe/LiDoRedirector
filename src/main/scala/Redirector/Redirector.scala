@@ -4,15 +4,19 @@ import org.scalatra._
 
 class Redirector extends MmoonredirectorStack {
 
-  get("/") {
-    <html>
-      <body>
-        <h1>Hello, world!</h1>
-        Say <a href="hello-scalate">hello to Scalate</a>.
-      </body>
-    </html>
+  private def repl(str: String) : String = {
+    return Map(":" -> "%3A", "/" -> "%2F").foldLeft(str){case (str:String, (x,y)) => str.replaceAll(x, y)}
   }
 
-  get("")
+  get("/lang/:lang/inventory/:schema/:exp") {
+    var lang = params("lang")
+    var schema = params("schema")
+    var exp = params("exp")
+
+    var iri = repl(s"http://mmoon.org/lang/$lang/inventory/$schema/$exp")
+    var sparql = repl("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql/")
+
+    redirect("http://lodview.it/lodview/?IRI=" + iri + "&sparql=" + sparql)
+  }
 
 }
