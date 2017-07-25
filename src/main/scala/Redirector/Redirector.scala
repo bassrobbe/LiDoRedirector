@@ -19,7 +19,7 @@ class Redirector extends MmoonredirectorStack {
     (".html", "text/html"))
 
   // redirect inventory requests to lodview
-  get("/lang/:lang/inventory/:schema/:res/?") {
+  get("/lang/:lang/inventory/:schema/:res/?$") {
     val lang = params("lang")
     val schema = params("schema")
     val res = params("res")
@@ -31,23 +31,30 @@ class Redirector extends MmoonredirectorStack {
   }
 
   //serve complete core, schema and inventory files
-  get("""^((/([a-z]*)(/(schema|inventory)/([a-z]*))?)(.ttl|.html|.rdf|.owx|.omn|.ofn|.nt|/?))""".r) {
+  get("""^((/core|/[a-z]*/(schema|inventory)/[a-z]*)(.ttl|.html|.rdf|.owx|.omn|.ofn|.nt|/?))$""".r) {
     //try content negotiation
-    if (multiParams("captures").apply(6).matches("/?")) {
-      for (fileExt <- request.getHeader("Accept").split(",").map{x => getFileExtByConType(x)} if !fileExt.isEmpty){
-        findFile(documentRoot + multiParams("captures").apply(1) + fileExt) match {
-          case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(fileExt).getOrElse("")))
-        }
+    if (multiParams("captures").apply(3).matches("/?")) {
+      for (fileExt <- request.getHeader("Accept").split(",").map{x => getFileExtByConType(x)} if !fileExt.isEmpty) {
+        val file = findFile(documentRoot + multiParams("captures").apply(1) + fileExt.get)
+        if (!file.isEmpty) Ok(file.get, Map("Content-Type" -> getConTypeByFileExt(fileExt).get))
       }
-      NotFound("Sorry, the file could not be found")
+      //NotFound("Sorry, the file could not be found")
     } else { //ignore "Accept" header if file extension is given via URI
       findFile(documentRoot + multiParams("captures").apply(0)) match {
-        case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(multiParams("captures")
-          .lift(6)).getOrElse("")))
+        case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(multiParams("captures").lift(3)).getOrElse("")))
         case None => NotFound("Sorry, the file could not be found")
       }
     }
   }
+
+  //sparql query redirects
+  get("""^/sparql""") {
+    redirect("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
+  }
+  post("""^/sparql""") {
+    redirect("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
+  }
+
 
   private def repl(str: String): String = {
     return Map(":" -> "%3A", "/" -> "%2F").foldLeft(str) { case (str: String, (x, y)) => str.replaceAll(x, y) }
