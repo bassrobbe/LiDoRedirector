@@ -1,7 +1,7 @@
 package Redirector
 
 import java.io.File
-
+import scala.util.control._
 import org.scalatra._
 
 class Redirector extends MmoonredirectorStack {
@@ -19,7 +19,7 @@ class Redirector extends MmoonredirectorStack {
     (".html", "text/html"))
 
   // redirect inventory requests to lodview
-  get("/lang/:lang/inventory/:schema/:res/?$") {
+  get("/lang/:lang/inventory/:schema/:res/?") {
     val lang = params("lang")
     val schema = params("schema")
     val res = params("res")
@@ -32,16 +32,20 @@ class Redirector extends MmoonredirectorStack {
 
   //serve complete core, schema and inventory files
   get("""^((/core|/[a-z]*/(schema|inventory)/[a-z]*)(.ttl|.html|.rdf|.owx|.omn|.ofn|.nt|/?))$""".r) {
-    //try content negotiation
+    val file1 = new File("/media/robert/work/test/core.html")
+    //try content negotiation if no type is given via URI
     if (multiParams("captures").apply(3).matches("/?")) {
       for (fileExt <- request.getHeader("Accept").split(",").map{x => getFileExtByConType(x)} if !fileExt.isEmpty) {
+        println(findFile(documentRoot + multiParams("captures").apply(1) + fileExt.get).get)
         val file = findFile(documentRoot + multiParams("captures").apply(1) + fileExt.get)
-        if (!file.isEmpty) Ok(file.get, Map("Content-Type" -> getConTypeByFileExt(fileExt).get))
+        if (!file.isEmpty) Ok(new File("/media/robert/work/test/core.html"), Map("Content-Type" -> getConTypeByFileExt(fileExt).get))
       }
       //NotFound("Sorry, the file could not be found")
+      Ok(file1, Map("Content-Type" -> "text/html"))
     } else { //ignore "Accept" header if file extension is given via URI
       findFile(documentRoot + multiParams("captures").apply(0)) match {
-        case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(multiParams("captures").lift(3)).getOrElse("")))
+        case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(multiParams("captures")
+          .lift(3)).getOrElse("")))
         case None => NotFound("Sorry, the file could not be found")
       }
     }
