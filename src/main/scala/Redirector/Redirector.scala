@@ -1,79 +1,26 @@
 package Redirector
 
-import java.io.File
-import scala.util.control._
-import org.scalatra._
+import org.apache.commons.lang3.CharEncoding
+import org.scalatra.Conneg
+
+import java.net.URLEncoder
 
 class Redirector extends MmoonredirectorStack {
 
-  private val documentRoot = "/media/robert/work/test/"
-
-  private val contentTypeMapping = List(
-    (".rdf", "application/rdf+xml"),
-    (".owl", "application/rdf+xml"),
-    (".owx", "application/owl+xml"),
-    (".ttl", "text/turtle"),
-    (".nt", "application/n-triples"),
-    (".owm", "text/owl-manchester"),
-    (".jsonld", "application/ld+json"),
-    (".html", "text/html"))
-
   // redirect inventory requests to lodview
   get("/:lang/inventory/:schema/:res/?") {
+
     val lang = params("lang")
     val schema = params("schema")
     val res = params("res")
 
-    val iri = repl(s"http://mmoon.org/$lang/inventory/$schema/$res")
-    val sparql = repl("http://mmoon.org/sparql/")
+    val iri = urlEncode(s"http://mmoon.org/$lang/inventory/$schema/$res")
+    val sparql = urlEncode("http://mmoon.org/sparql/")
 
     redirect("http://lodview.it/lodview/?IRI=" + iri + "&sparql=" + sparql)
   }
 
-  //serve complete core, schema and inventory files
-  get("""^((/core|/[a-z]*/(schema|inventory)/[a-z]*)(.ttl|.html|.rdf|.owx|.omn|.ofn|.nt|/?))$""".r) {
-    val file1 = new File("/media/robert/work/test/core.html")
-    //try content negotiation if no type is given via URI
-    if (multiParams("captures").apply(3).matches("/?")) {
-      for (fileExt <- request.getHeader("Accept").split(",").map{x => getFileExtByConType(x)} if !fileExt.isEmpty) {
-        println(findFile(documentRoot + multiParams("captures").apply(1) + fileExt.get).get)
-        val file = findFile(documentRoot + multiParams("captures").apply(1) + fileExt.get)
-        if (!file.isEmpty) Ok(new File("/media/robert/work/test/core.html"), Map("Content-Type" -> getConTypeByFileExt(fileExt).get))
-      }
-      //NotFound("Sorry, the file could not be found")
-      Ok(file1, Map("Content-Type" -> "text/html"))
-    } else { //ignore "Accept" header if file extension is given via URI
-      findFile(documentRoot + multiParams("captures").apply(0)) match {
-        case Some(file) => Ok(file, Map("Content-Type" -> getConTypeByFileExt(multiParams("captures")
-          .lift(3)).getOrElse("")))
-        case None => NotFound("Sorry, the file could not be found")
-      }
-    }
-  }
 
-  //sparql query redirects
-  get("""^/sparql""") {  //TODO: add a guard/check s.t. this redirect only triggers if a 'query' param is present
-    redirect("http://localhost:9999/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
-  }
-  post("""^/sparql""") {
-    redirect("http://localhost:9999/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
-  }
 
-  //TODO: use java.net.URLEncoder#encode(String, String) with UTF 8 instead! rename to 'urlencode'
-  private def repl(str: String): String = {
-    return Map(":" -> "%3A", "/" -> "%2F").foldLeft(str) { case (str: String, (x, y)) => str.replaceAll(x, y) }
-  }
-
-  private def findFile(path: String): Option[File] = {
-    val file = new File(path)
-    if (file.exists && !file.isDirectory) Some(file) else None
-  }
-
-  private def getConTypeByFileExt(fileExt: Option[String]): Option[String] = {
-    contentTypeMapping.toMap.get(fileExt.getOrElse(""))
-  }
-
-  private def getFileExtByConType(contentType: String) : Option[String] = {
-    contentTypeMapping.map(x => x.swap).toMap.get(contentType)
-  }
+  private def urlEncode(str: String): String = URLEncoder.encode(str, CharEncoding.UTF_8)
 }
