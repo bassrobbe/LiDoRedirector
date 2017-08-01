@@ -19,13 +19,13 @@ class Redirector extends MmoonredirectorStack {
     (".html", "text/html"))
 
   // redirect inventory requests to lodview
-  get("/lang/:lang/inventory/:schema/:res/?") {
+  get("/:lang/inventory/:schema/:res/?") {
     val lang = params("lang")
     val schema = params("schema")
     val res = params("res")
 
-    val iri = repl(s"http://mmoon.org/lang/$lang/inventory/$schema/$res")
-    val sparql = repl("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql/")
+    val iri = repl(s"http://mmoon.org/$lang/inventory/$schema/$res")
+    val sparql = repl("http://mmoon.org/sparql/")
 
     redirect("http://lodview.it/lodview/?IRI=" + iri + "&sparql=" + sparql)
   }
@@ -52,14 +52,14 @@ class Redirector extends MmoonredirectorStack {
   }
 
   //sparql query redirects
-  get("""^/sparql""") {
-    redirect("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
+  get("""^/sparql""") {  //TODO: add a guard/check s.t. this redirect only triggers if a 'query' param is present
+    redirect("http://localhost:9999/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
   }
   post("""^/sparql""") {
-    redirect("http://fusionfactory.de:9988/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
+    redirect("http://localhost:9999/blazegraph/namespace/mmoon/sparql?query=" + params("query"))
   }
 
-
+  //TODO: use java.net.URLEncoder#encode(String, String) with UTF 8 instead! rename to 'urlencode'
   private def repl(str: String): String = {
     return Map(":" -> "%3A", "/" -> "%2F").foldLeft(str) { case (str: String, (x, y)) => str.replaceAll(x, y) }
   }
