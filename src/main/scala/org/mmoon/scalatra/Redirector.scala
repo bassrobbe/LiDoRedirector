@@ -1,7 +1,6 @@
-package Redirector
+package org.mmoon.scalatra
 
 import org.apache.commons.lang3.CharEncoding
-import org.scalatra.Conneg
 
 import java.net.URLEncoder
 
@@ -20,7 +19,5 @@ class Redirector extends MmoonredirectorStack {
     redirect("http://lodview.it/lodview/?IRI=" + iri + "&sparql=" + sparql)
   }
 
-
-
-  private def urlEncode(str: String): String = URLEncoder.encode(str, CharEncoding.UTF_8)
+  def urlEncode(str: String): String = URLEncoder.encode(str, CharEncoding.UTF_8)
 }

@@ -1,11 +1,12 @@
-import Redirector.MimeTypeFormat
+package org.mmoon
+
 import org.scalatra.Conneg._
 
 /**
   * Created by Markus Ackermann.
   * No rights reserved.
   */
-package object Redirector {
+package object scalatra {
 
   val contentTypeMapping = List(
     (".rdf", "application/rdf+xml"),
