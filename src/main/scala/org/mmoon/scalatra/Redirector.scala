@@ -1,15 +1,18 @@
 package org.mmoon.scalatra
 
-import javax.activation.MimeType
-import java.io.File
-
-import scala.io.Source
-
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatra.{NotFound, Ok, SeeOther}
 
-class Redirector extends MmoonredirectorStack {
+import javax.activation.MimeType
+import java.io.File
+import scala.io.Source
 
-  private val documentRoot = "/path/to/files/"
+class Redirector extends MmoonredirectorStack with LazyLogging {
+
+  private lazy val externalConfig = ConfigFactory.load()
+
+  private lazy val documentRoot = externalConfig.getString("redirector.documentRoot")
 
   ////CORE
   //serve always full ontology

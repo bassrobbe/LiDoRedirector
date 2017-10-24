@@ -1,0 +1,7 @@
+// this is a sample configuration file to adjust in your local deployment
+// simply copy it over to a sibling 'application.conf' file and adjust it
+// to your environment and needs
+redirector {
+
+  documentRoot = "/tmp/mmoon-deploy/"
+}
