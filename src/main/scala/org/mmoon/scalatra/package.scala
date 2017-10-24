@@ -21,24 +21,29 @@ package object scalatra {//
     (".nt", "application/n-triples"),
     (".owm", "text/owl-manchester"),
     (".jsonld", "application/ld+json"),
-    (".html", "text/html"),
-    (".rdf", "*/*"))
-  //The javax.activation.MimeType.match method matches "*" only in subtype to any supported MimeType
-  //(which is the common sense of "*" character). Therefore "*/*" had to be added manually.
+    (".html", "text/html"))
 
   val supportedMimeTypes = mimeTypeMapping.map(_._2).toSet.map((t: String) => new MimeType(t))
   //is there a better solution than using "new" expression?
 
   implicit object MimeTypeFormat extends Format[MimeType] {
+    val x = """([a-z]+|\*)/([a-z+-]+|\*)""".r
     override def entry: MimeTypeFormat.Parser[Option[MimeType]] = token ^^
-      { mimeTypeStr => new MimeType(mimeTypeStr) } ^^
-      { mimeType => supportedMimeTypes.find(t => t.`match`(mimeType)) }
+    {t => t match {
+      case x(_,_) => Some(new MimeType(t))
+      case _ => None
+    }
+  }
+
 
     //deleted "/" character, because expressions like "text/turtle" should be accepted
     override def token: MimeTypeFormat.Parser[String] = """[\u0020-\u007E&&[^ \t()<>@,;:\"\[\]?={}]]+""".r
   }
 
-  def acceptedMimeTypes(implicit req: HttpServletRequest): List[Conneg[MimeType]] = values("Accept")
+  val Accept = "Accept"
 
+  def acceptedMimeTypes(implicit req: HttpServletRequest): List[Conneg[MimeType]] = values(Accept)
+
+  //def preferredMimeType(implicit req: HttpServletRequest): Option[MimeType] = preferredValue(Accept)
 
 }

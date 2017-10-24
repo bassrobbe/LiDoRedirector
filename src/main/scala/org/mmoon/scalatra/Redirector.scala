@@ -1,73 +1,123 @@
 package org.mmoon.scalatra
 
-import org.apache.commons.lang3.CharEncoding
-import java.net.URLEncoder
 import javax.activation.MimeType
-
-import org.scalatra.{Conneg, NotFound, Ok}
 import java.io.File
 
-import org.mmoon.scalatra
+import scala.io.Source
+
+import org.scalatra.{NotFound, Ok, SeeOther}
 
 class Redirector extends MmoonredirectorStack {
 
   private val documentRoot = "/media/robert/work/test/"
 
+  ////CORE
+  //serve always full ontology
+  get("""^/core(/[a-z]+)?/?$""".r) { redirectStaticResource("/core") }
+
+  get("""^/core(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+    { serveFile("/core", multiParams("captures").apply(0)) }
+
+  ////SCHEMA
+  //serve always full schema file
+  get("""^(/[a-z]+/schema/[a-z]+)(/[a-z]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+
+  get("""^(/[a-z]+/schema/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+
+  ////INVENTORY
+  //serve full dataset
+  get("""^(/[a-z]+/inventory/[a-z]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+
+  get("""^(/[a-z]+/inventory/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+
+  //serve just one resource
+  get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) { checkInventoryResource(multiParams("captures").apply(0)) match {
+    case Some(t) => SeeOther("http://mmoon.org" + multiParams("captures").apply(0) + getFileExtension(t).getOrElse(""))
+    case None => NotFound("Sorry, the resource could not be found")
+  }}
+
+  get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
+  //get("""^(/Berlin)(.ttl|.html|.rdf|.owl|.jsonld|.nt)$""".r)
+   { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+
+  get("""^(/lodview/[a-zA-Z/\.-_]+)$""".r)
+    { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
+
+  post("""^(/lodview/[a-zA-Z/]+)$""".r)
+    { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
 
 
-  // redirect inventory requests to lodview
-  get("/:lang/inventory/:schema/:res/?") {
-    val lang = params("lang")
-    val schema = params("schema")
-    val res = params("res")
+  private def redirectStaticResource(relPath : String) = {
+    def checkResourceExistence(basePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
+      def checkFile(t: MimeType) : Boolean = {
+        val fileExt = getFileExtension(t)
+        if (fileExt.isDefined) {
+          val file = new File(basePath + fileExt.get)
+          file.exists && !file.isDirectory
+        } else false
+      }
+      //Don't recompile the same regular expression on each case evaluation, but rather have it on an object.
+      val x = """[a-z]+/[a-z+-]+""".r
+      val y = """[a-z]+/\*""".r
+      val z = """\*/\*""".r
 
-    val iri = urlEncode(s"http://mmoon.org/$lang/inventory/$schema/$res")
-    val sparql = urlEncode("http://mmoon.org/sparql/")
-
-    redirect("http://lodview.it/lodview/?IRI=" + iri + "&sparql=" + sparql)
-  }
-
-  private def urlEncode(str: String): String = URLEncoder.encode(str, CharEncoding.UTF_8)
-
-  //serve full core, schema and inventory files
-  get("""^((/core|/[a-z]*/(schema|inventory)/[a-z]*)(.ttl|.html|.rdf|.owx|.omn|.ofn|.owl|.owm|.jsonld|.nt|/?))$""".r) {
-    //try content negotiation if no type is given via URI
-    if (multiParams("captures").apply(3).matches("/?"))
-      serveFile(findFile(documentRoot + multiParams("captures").apply(1), acceptedMimeTypes.sortWith(_.q > _.q))) //better solution than apply?
-    //ignore "Accept" header if file extension is given via URI
-    else checkFileExistence(documentRoot + multiParams("captures").apply(0)) match {
-      case Some(file) => serveFile(Some((file,getMimeType(multiParams("captures").apply(3)).get)))
-      case None => serveFile(None)
+      for (t <- mimeTypes) t.toString match {
+        case x() => if(checkFile(t)) return Some(t)
+        case y() => for (s <- mimeTypeMapping.map(k => new MimeType(k._2)) if t.`match`(s)) if (checkFile(s)) return Some(s)
+        case z() => if(checkFile(new MimeType("text/html"))) return Some(new MimeType("text/html"))
+        case _ =>
+      }; None
+    }
+    checkResourceExistence(documentRoot + relPath, acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) match {
+      case Some(mimeType) => SeeOther("http://mmoon.org" + relPath + getFileExtension(mimeType).get)
+      case None => NotFound("Sorry, the file could not be found")
     }
   }
 
-  private def findFile(basePath: String, mimeTypes: List[Conneg[MimeType]]) : Option[(File, MimeType)] = {
-    def findFileRec(mimeTypes: List[Conneg[MimeType]]) : Option[(File, MimeType)] =
-      if (mimeTypes.length == 0) None
-      else checkFileExistence(basePath + getFileExtension(mimeTypes(0).value).getOrElse("")) match {
-          case Some(file) => Some(file, mimeTypes(0).value)
-          case None => findFileRec(mimeTypes.tail)
-        } //is there a more elegant way?
-    findFileRec(mimeTypes)
+  private def serveFile(relPath : String, fileExt : String) = {
+    val file = new File(documentRoot + relPath + fileExt)
+    if (file.exists && !file.isDirectory) Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
+    else NotFound("Sorry, the file could not be found")
   }
 
-  private def checkFileExistence(path: String) : Option[File] = {
-    val file = new File(path)
-    if (file.exists && !file.isDirectory) Some(file) else None
+  private def checkInventoryResource(relPath: String) : Option[MimeType] = {
+    if(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath + "?output=application%2Fn-triples").mkString.length == 0) None
+    else {
+      val x = """[a-z]+/[a-z+-]+""".r
+      val y = """[a-z]+/\*""".r
+      val z = """\*/\*""".r
+
+      val supportedMimeTypes = List("application/rdf+xml", "text/html", "text/turtle", "application/n-triples", "application/n-triples")
+
+      for (t <- acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) t.toString match {
+        case x() => if(supportedMimeTypes.contains(t.toString)) return Some(t)
+        case y() => for (s <- supportedMimeTypes.map(new MimeType(_)) if t.`match`(s)) return Some(s)
+        case z() => return Some(new MimeType("text/html"))
+        case _ =>
+      }; None
+    }
+  }
+
+  private def serveInventoryResource(relPath : String, fileExt : String) = {
+    val t = getMimeType(fileExt).getOrElse(new MimeType)
+
+    //It seems, there is no ProxyPass functionality included in Scalatra. So a little workaround is necessary.
+    fileExt match {
+      case ".html" => Ok(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath).mkString,
+        Map("Content-Type" -> "text/html"))
+      case _ => Ok(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath + "?output=" + t.getPrimaryType + "%2F"
+        + t.getSubType).mkString, Map("Content-Type" -> t.toString))
+    }
   }
 
   private def getFileExtension(mimeType: MimeType) : Option[String] =
     mimeTypeMapping.map(_.swap).toMap.get(mimeType.toString)
 
 
-  private def getMimeType(fileExtension: String): Option[MimeType] = mimeTypeMapping.toMap.get(fileExtension) match {
+  private def getMimeType(fileExt: String): Option[MimeType] = mimeTypeMapping.toMap.get(fileExt) match {
     case Some(mimeTypeStr) => Some(new MimeType(mimeTypeStr))
     case None => None
   }
-
-    private def serveFile(tuple: Option[(File, MimeType)]) = tuple match {
-    case Some((file, mimeType)) => Ok(file, Map("Content-Type" -> mimeType.toString))
-    case None => NotFound("Sorry, the file could not be found")
-  }
-
 }

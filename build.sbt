@@ -43,6 +43,8 @@ scalateTemplateConfig in Compile := {
 
 enablePlugins(JettyPlugin)
 
+containerPort := 8081
+
 javaOptions ++= Seq(
   "-Xdebug",
   "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
