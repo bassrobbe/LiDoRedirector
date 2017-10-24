@@ -9,7 +9,7 @@ import org.scalatra.{NotFound, Ok, SeeOther}
 
 class Redirector extends MmoonredirectorStack {
 
-  private val documentRoot = "/media/robert/work/test/"
+  private val documentRoot = "/path/to/files/"
 
   ////CORE
   //serve always full ontology
@@ -42,6 +42,7 @@ class Redirector extends MmoonredirectorStack {
   get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
     { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
+  //necessary to serve .css and .js files for lodview interface
   get("""^(/lodview/[a-zA-Z/\.-_]+)$""".r)
     { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
 
