@@ -5,7 +5,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.scalatra.{NotFound, Ok, SeeOther}
 
 import javax.activation.MimeType
-import java.io.File
+import better.files.File
+import java.io.{File => JavaFile}
 import scala.io.Source
 
 class Redirector extends MmoonredirectorStack with LazyLogging {
@@ -14,6 +15,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   private lazy val documentRoot = externalConfig.getString("redirector.documentRoot")
 
+  private lazy val docRootFile = File(documentRoot)
   ////CORE
   //serve always full ontology
   get("""^/core(/[a-z]+)?/?$""".r) { redirectStaticResource("/core") }
@@ -56,11 +58,9 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   private def redirectStaticResource(relPath : String) = {
     def checkResourceExistence(basePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
       def checkFile(t: MimeType) : Boolean = {
-        val fileExt = getFileExtension(t)
-        if (fileExt.isDefined) {
-          val file = new File(basePath + fileExt.get)
-          file.exists && !file.isDirectory
-        } else false
+          getFileExtension(t).fold(false) { ext =>
+          File(basePath + ext).isRegularFile
+        }
       }
       //Don't recompile the same regular expression on each case evaluation, but rather have it on an object.
       val x = """[a-z]+/[a-z+-]+""".r
@@ -82,7 +82,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   }
 
   private def serveFile(relPath : String, fileExt : String) = {
-    val file = new File(documentRoot + relPath + fileExt)
+    val file = new JavaFile(documentRoot + relPath + fileExt)
     if (file.exists && !file.isDirectory) Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
     else NotFound("Sorry, the file could not be found")
   }
