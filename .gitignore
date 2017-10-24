@@ -67,3 +67,6 @@ jrebel.lic
 
 # paulp script
 /.lib/
+
+# deployment-specific configuration
+src/main/resources/application.conf
