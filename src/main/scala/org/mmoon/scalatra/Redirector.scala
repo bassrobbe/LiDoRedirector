@@ -34,13 +34,13 @@ class Redirector extends MmoonredirectorStack {
 
   //serve just one resource
   get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) { checkInventoryResource(multiParams("captures").apply(0)) match {
-    case Some(t) => SeeOther("http://mmoon.org" + multiParams("captures").apply(0) + getFileExtension(t).getOrElse(""))
+    case Some(t) => SeeOther("http://mmoon.org" + multiParams("captures").apply(0) + getFileExtension(t).getOrElse(""),
+      Map("Content-Type" -> t.toString))
     case None => NotFound("Sorry, the resource could not be found")
   }}
 
   get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
-  //get("""^(/Berlin)(.ttl|.html|.rdf|.owl|.jsonld|.nt)$""".r)
-   { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+    { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
   get("""^(/lodview/[a-zA-Z/\.-_]+)$""".r)
     { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
@@ -71,7 +71,8 @@ class Redirector extends MmoonredirectorStack {
       }; None
     }
     checkResourceExistence(documentRoot + relPath, acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) match {
-      case Some(mimeType) => SeeOther("http://mmoon.org" + relPath + getFileExtension(mimeType).get)
+      case Some(mimeType) => SeeOther("http://mmoon.org" + relPath + getFileExtension(mimeType).get,
+        Map("Content-Type" -> mimeType.toString))
       case None => NotFound("Sorry, the file could not be found")
     }
   }
