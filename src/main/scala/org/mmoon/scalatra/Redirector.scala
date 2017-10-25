@@ -6,8 +6,6 @@ import org.scalatra.{NotFound, Ok, SeeOther}
 import javax.activation.MimeType
 import better.files.File
 import com.netaporter.uri.dsl._
-import com.netaporter.uri.encoding._
-import com.netaporter.uri.config.UriConfig
 import scala.io.Source
 
 class Redirector extends MmoonredirectorStack with LazyLogging {
@@ -18,7 +16,8 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   private lazy val docRootFile = File(documentRoot)
 
-
+  //redirect to http://mmoon.org/ if there's no matching route
+  get("""^*$""".r) { redirect("http://mmoon.org/") }
 
   ////CORE
   //serve always full ontology
@@ -48,16 +47,15 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
     case None => NotFound("Sorry, the resource could not be found")
   }}
 
-  get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
+  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
     { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
   //necessary to serve .css and .js files for lodview interface
-  get("""^(/lodview/[a-zA-Z/\.-_]+)$""".r)
+  get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r)
     { Ok(Source.fromURL("http://127.0.0.1:8080"/multiParams("captures").apply(0)).mkString) }
 
-  post("""^(/lodview/[a-zA-Z/]+)$""".r)
+  post("""^/(lodview/[a-zA-Z/]+)$""".r)
     { Ok(Source.fromURL("http://127.0.0.1:8080/"/multiParams("captures").apply(0)).mkString) }
-
 
   private def redirectStaticResource(relPath : String) = {
     def checkResourceExistence(basePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
@@ -94,8 +92,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   }
 
   private def checkInventoryResource(relPath: String) : Option[MimeType] = {
-    implicit val config = UriConfig(encoder = percentEncode ++ '/')
-
     if(Source.fromURL("http://127.0.0.1:8080/lodview"/relPath?("output" -> "application/n-triples")).mkString.length == 0) None
     else {
       val x = """[a-z]+/[a-z+-]+""".r
@@ -114,7 +110,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   }
 
   private def serveInventoryResource(relPath : String, fileExt : String) = {
-    implicit val config = UriConfig(encoder = percentEncode ++ '/')
     val t = getMimeType(fileExt).getOrElse(new MimeType)
 
     //It seems, there is no ProxyPass functionality included in Scalatra. So a little workaround is necessary.
@@ -128,7 +123,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   private def getFileExtension(mimeType: MimeType) : Option[String] =
     mimeTypeMapping.map(_.swap).toMap.get(mimeType.toString)
-
 
   private def getMimeType(fileExt: String): Option[MimeType] = mimeTypeMapping.toMap.get(fileExt) match {
     case Some(mimeTypeStr) => Some(new MimeType(mimeTypeStr))
