@@ -3,10 +3,11 @@ package org.mmoon.scalatra
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatra.{NotFound, Ok, SeeOther}
-
 import javax.activation.MimeType
 import better.files.File
-import java.io.{File => JavaFile}
+import com.netaporter.uri.dsl._
+import com.netaporter.uri.encoding._
+import com.netaporter.uri.config.UriConfig
 import scala.io.Source
 
 class Redirector extends MmoonredirectorStack with LazyLogging {
@@ -16,30 +17,33 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   private lazy val documentRoot = externalConfig.getString("redirector.documentRoot")
 
   private lazy val docRootFile = File(documentRoot)
+
+
+
   ////CORE
   //serve always full ontology
-  get("""^/core(/[a-z]+)?/?$""".r) { redirectStaticResource("/core") }
+  get("""^/core(/[a-z]+)?/?$""".r) { redirectStaticResource("core") }
 
   get("""^/core(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile("/core", multiParams("captures").apply(0)) }
+    { serveFile("core", multiParams("captures").apply(0)) }
 
   ////SCHEMA
   //serve always full schema file
-  get("""^(/[a-z]+/schema/[a-z]+)(/[a-z]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-z]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
 
-  get("""^(/[a-z]+/schema/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+  get("""^/([a-z]+/schema/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
   ////INVENTORY
   //serve full dataset
-  get("""^(/[a-z]+/inventory/[a-z]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/inventory/[a-z]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
 
-  get("""^(/[a-z]+/inventory/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+  get("""^/([a-z]+/inventory/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
   //serve just one resource
-  get("""^(/[a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) { checkInventoryResource(multiParams("captures").apply(0)) match {
-    case Some(t) => SeeOther("http://mmoon.org" + multiParams("captures").apply(0) + getFileExtension(t).getOrElse(""),
+  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) { checkInventoryResource(multiParams("captures").apply(0)) match {
+    case Some(t) => SeeOther("http://mmoon.org"/"%s%s".format(multiParams("captures").apply(0), getFileExtension(t).getOrElse("")),
       Map("Content-Type" -> t.toString))
     case None => NotFound("Sorry, the resource could not be found")
   }}
@@ -49,17 +53,17 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   //necessary to serve .css and .js files for lodview interface
   get("""^(/lodview/[a-zA-Z/\.-_]+)$""".r)
-    { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
+    { Ok(Source.fromURL("http://127.0.0.1:8080"/multiParams("captures").apply(0)).mkString) }
 
   post("""^(/lodview/[a-zA-Z/]+)$""".r)
-    { Ok(Source.fromURL("http://127.0.0.1:8080/" + multiParams("captures").apply(0)).mkString) }
+    { Ok(Source.fromURL("http://127.0.0.1:8080/"/multiParams("captures").apply(0)).mkString) }
 
 
   private def redirectStaticResource(relPath : String) = {
     def checkResourceExistence(basePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
       def checkFile(t: MimeType) : Boolean = {
-          getFileExtension(t).fold(false) { ext =>
-          File(basePath + ext).isRegularFile
+        getFileExtension(t).fold(false) { ext =>
+          File("%s%s".format(basePath, ext)).isRegularFile
         }
       }
       //Don't recompile the same regular expression on each case evaluation, but rather have it on an object.
@@ -67,6 +71,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
       val y = """[a-z]+/\*""".r
       val z = """\*/\*""".r
 
+      //Java's MimeType.match method has some strange behaviour concerning */*. So there must be a manual case differentiation.
       for (t <- mimeTypes) t.toString match {
         case x() => if(checkFile(t)) return Some(t)
         case y() => for (s <- mimeTypeMapping.map(k => new MimeType(k._2)) if t.`match`(s)) if (checkFile(s)) return Some(s)
@@ -74,21 +79,24 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
         case _ =>
       }; None
     }
-    checkResourceExistence(documentRoot + relPath, acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) match {
-      case Some(mimeType) => SeeOther("http://mmoon.org" + relPath + getFileExtension(mimeType).get,
+    checkResourceExistence("%s%s".format(documentRoot, relPath), acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) match {
+
+      case Some(mimeType) => SeeOther("http://mmoon.org"/"%s%s".format(relPath, getFileExtension(mimeType).get),
         Map("Content-Type" -> mimeType.toString))
       case None => NotFound("Sorry, the file could not be found")
     }
   }
 
   private def serveFile(relPath : String, fileExt : String) = {
-    val file = new JavaFile(documentRoot + relPath + fileExt)
+    val file = (docRootFile/"%s%s".format(relPath, fileExt)).toJava
     if (file.exists && !file.isDirectory) Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
     else NotFound("Sorry, the file could not be found")
   }
 
   private def checkInventoryResource(relPath: String) : Option[MimeType] = {
-    if(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath + "?output=application%2Fn-triples").mkString.length == 0) None
+    implicit val config = UriConfig(encoder = percentEncode ++ '/')
+
+    if(Source.fromURL("http://127.0.0.1:8080/lodview"/relPath?("output" -> "application/n-triples")).mkString.length == 0) None
     else {
       val x = """[a-z]+/[a-z+-]+""".r
       val y = """[a-z]+/\*""".r
@@ -106,14 +114,15 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   }
 
   private def serveInventoryResource(relPath : String, fileExt : String) = {
+    implicit val config = UriConfig(encoder = percentEncode ++ '/')
     val t = getMimeType(fileExt).getOrElse(new MimeType)
 
     //It seems, there is no ProxyPass functionality included in Scalatra. So a little workaround is necessary.
     fileExt match {
-      case ".html" => Ok(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath).mkString,
+      case ".html" => Ok(Source.fromURL("http://127.0.0.1:8080/lodview"/relPath).mkString,
         Map("Content-Type" -> "text/html"))
-      case _ => Ok(Source.fromURL("http://127.0.0.1:8080/lodview" + relPath + "?output=" + t.getPrimaryType + "%2F"
-        + t.getSubType).mkString, Map("Content-Type" -> t.toString))
+      case _ => Ok(Source.fromURL("http://127.0.0.1:8080/lodview"/relPath?("output" -> t.getBaseType)).mkString,
+        Map("Content-Type" -> t.toString))
     }
   }
 
