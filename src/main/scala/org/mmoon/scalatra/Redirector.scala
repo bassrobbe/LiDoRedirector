@@ -78,7 +78,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
       }; None
     }
     checkResourceExistence("%s%s".format(documentRoot, relPath), acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) match {
-
       case Some(mimeType) => SeeOther("http://mmoon.org"/"%s%s".format(relPath, getFileExtension(mimeType).get),
         Map("Content-Type" -> mimeType.toString))
       case None => NotFound("Sorry, the file could not be found")
