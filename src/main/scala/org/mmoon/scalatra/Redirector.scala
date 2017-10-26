@@ -41,11 +41,19 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
   //serve just one resource
-  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) { checkInventoryResource(multiParams("captures").apply(0)) match {
-    case Some(t) => SeeOther("http://mmoon.org"/"%s%s".format(multiParams("captures").apply(0), getFileExtension(t).getOrElse("")),
-      Map("Content-Type" -> t.toString))
-    case None => NotFound("Sorry, the resource could not be found")
-  }}
+  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) {
+
+    checkInventoryResource(multiParams("captures").apply(0)) match {
+      case Some(t) => {
+
+        val targetUri = s"http://mmoon.org/${multiParams("captures").apply(0)}${getFileExtension(t).getOrElse("")}"
+
+        SeeOther(targetUri, Map("Content-Type" -> t.toString))
+      }
+
+      case None => NotFound("Sorry, the resource could not be found")
+    }
+  }
 
   get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
     { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
