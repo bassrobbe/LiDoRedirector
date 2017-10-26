@@ -16,16 +16,16 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   private lazy val docRootFile = File(documentRoot)
 
-  
+
   //redirect to http://mmoon.org/ if there's no matching route
 
-  get("""^*$""".r) { redirect("http://mmoon.org/") }
+  //get("""^.*$""".r) { redirect("http://mmoon.org/") }
 
 
   ////CORE
   //serve always full ontology
 
-  get("""^/core(/[a-z]+)?/?$""".r) { redirectStaticResource("core") }
+  get("""^/core(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource("core") }
 
   get("""^/core(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
     { serveFile("core", multiParams("captures").apply(0)) }
@@ -34,7 +34,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   ////SCHEMA
   //serve always full schema file
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-z]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
 
   get("""^/([a-z]+/schema/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
@@ -43,7 +43,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   ////INVENTORY
   //serve full dataset
 
-  get("""^/([a-z]+/inventory/[a-z]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/inventory/[a-zA-Z-_]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
 
   get("""^/([a-z]+/inventory/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
