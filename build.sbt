@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "com.github.pathikrit" %% "better-files" % "3.2.0",
   "io.lemonlabs" %% "scala-uri" % "0.5.0",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "org.eclipse.rdf4j" % "rdf4j-runtime" % "2.2",
   "ch.qos.logback" % "logback-classic" % "1.1.5" % "runtime",
   "org.eclipse.jetty" % "jetty-webapp" % "9.2.15.v20160210" % "container",
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
