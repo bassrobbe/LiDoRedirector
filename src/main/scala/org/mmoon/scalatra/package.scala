@@ -15,7 +15,7 @@ package object scalatra {//
   //mimeTypeMapping isn't complete right now. Missing entries: .ofn .omn
   val mimeTypeMapping = List(
     (".rdf", "application/rdf+xml"),
-    (".owl", "application/rdf+xml"),
+    //(".owl", "application/rdf+xml"),
     (".owx", "application/owl+xml"),
     (".ttl", "text/turtle"),
     (".nt", "application/n-triples"),

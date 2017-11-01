@@ -27,8 +27,8 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   get("""^/core(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource("core") }
 
-  get("""^/core(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile("core", multiParams("captures").apply(0)) }
+  get("""^/core(/[a-zA-Z-_]+)?(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+    { serveFile("core", multiParams("captures").apply(1)) }
 
 
   ////SCHEMA
@@ -36,8 +36,8 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
 
   get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
 
-  get("""^/([a-z]+/schema/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z-_]+)?(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
+    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(2)) }
 
 
   ////INVENTORY
@@ -156,7 +156,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
         case z() => return Some(new MimeType("text/html"))
 
         case _ =>
-
       }
 
       None
