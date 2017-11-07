@@ -2,13 +2,17 @@ package org.mmoon.scalatra
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatra.{NotFound, Ok, SeeOther}
+import org.scalatra.{NotFound, Ok, SeeOther, UnsupportedMediaType}
 import javax.activation.MimeType
+
 import better.files.File
+import com.netaporter.uri.Uri
 import com.netaporter.uri.dsl._
+import org.scalatra.scalate.ScalateSupport
+
 import scala.io.Source
 
-class Redirector extends MmoonredirectorStack with LazyLogging {
+class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSupport {
 
   private lazy val externalConfig = ConfigFactory.load()
 
@@ -25,64 +29,54 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
   ////CORE
   //serve always full ontology
 
-  get("""^/core(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource("core") }
+  get("""^/core(/[a-zA-Z0-9-_]+)?/?$""".r) { redirectStaticResource("core", "") }
 
-  get("""^/core(/[a-zA-Z-_]+)?(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile("core", multiParams("captures").apply(1)) }
+  get("""^/core(/[a-zA-Z0-9-_]+)?(.[a-z]+)$""".r)
+    { serveFile("core", multiParams("captures").apply(1), "") }
 
 
   ////SCHEMA
   //serve always full schema file
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z-_]+)?/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9-_]+)?/?$""".r)
+    { redirectStaticResource(multiParams("captures").apply(0), "schema") }
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z-_]+)?(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(2)) }
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9-_]+)?(.[a-z]+)$""".r)
+    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(2), "schema") }
 
 
   ////INVENTORY
   //serve full dataset
 
-  get("""^/([a-z]+/inventory/[a-zA-Z-_]+)/?$""".r) { redirectStaticResource(multiParams("captures").apply(0)) }
+  get("""^/([a-z]+/inventory/[a-z]+)/?$""".r)
+    { redirectStaticResource(multiParams("captures").apply(0), "dataset") }
 
-  get("""^/([a-z]+/inventory/[a-z]+)(.ttl|.html|.rdf|.owx|.owl|.owm|.jsonld|.nt)$""".r)
-    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+  get("""^/([a-z]+/inventory/[a-z]+)(.[a-z]+)$""".r)
+    { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1), "dataset") }
 
   //serve just one resource
-  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)/?$""".r) {
+  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9-_]+)/?$""".r)
+    { redirectInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
-    checkInventoryResource(multiParams("captures").apply(0)) match {
-
-      case Some(t) => {
-
-        val targetUri = s"http://mmoon.org/${multiParams("captures").apply(0)}${getFileExtension(t).getOrElse("")}"
-
-        SeeOther(targetUri, Map("Content-Type" -> t.toString))
-      }
-
-      case None => NotFound("Sorry, the resource could not be found")
-    }
-  }
-
-  get("""^/([a-z]+/inventory/[a-z]+/[a-zA-Z-_]+)(.ttl|.html|.rdf|.jsonld|.nt)$""".r)
-    { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
+  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9-_]+)(.[a-z]+)$""".r)
+    { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1), multiParams("captures").apply(2)) }
 
 
-  //necessary to serve .css and .js files for lodview interface
-  get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r)
-    { Ok(Source.fromURL("http://127.0.0.1:8080"/multiParams("captures").apply(0)).mkString) }
+//  //necessary to serve .css and .js files for lodview interface
+//  get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r)
+//    { Ok(Source.fromURL("http://127.0.0.1:8080"/multiParams("captures").apply(0)).mkString) }
+//
+//  post("""^/(lodview/[a-zA-Z/]+)$""".r)
+//    { Ok(Source.fromURL("http://127.0.0.1:8080/"/multiParams("captures").apply(0)).mkString) }
 
-  post("""^/(lodview/[a-zA-Z/]+)$""".r)
-    { Ok(Source.fromURL("http://127.0.0.1:8080/"/multiParams("captures").apply(0)).mkString) }
 
+  private def redirectStaticResource(resourcePath : String, resourceType : String) = {
 
-  private def redirectStaticResource(relPath : String) = {
-
-    def checkResourceExistence(basePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
+    def checkResourceExistence(resourcePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
 
       def checkFile(t: MimeType) : Boolean = {
 
-        getFileExtension(t).fold(false) { ext => File(s"${basePath}${ext}").isRegularFile
+        getFileExtension(t).fold(false) { ext => (docRootFile / s"${resourcePath}${ext}").isRegularFile
 
         }
       }
@@ -107,83 +101,133 @@ class Redirector extends MmoonredirectorStack with LazyLogging {
       None
     }
 
-    val foundResource = checkResourceExistence(s"${documentRoot}${relPath}", acceptedMimeTypes.sortWith(_.q > _.q).map(_.value))
+    val foundResource = checkResourceExistence(resourcePath, acceptedMimeTypes.sortWith(_.q > _.q).map(_.value))
     foundResource match {
 
       case Some(mimeType) => {
 
-        val targetUri = "http://mmoon.org"/s"${relPath}${getFileExtension(mimeType).get}"
+        val targetUri = "http://mmoon.org"/s"${resourcePath}${getFileExtension(mimeType).get}"
 
         SeeOther(targetUri, Map("Content-Type" -> mimeType.toString))
       }
 
-      case None => NotFound("Sorry, the file could not be found")
+      case None => {
 
+        val testFile = docRootFile / s"${resourcePath}.html"
+
+        if (testFile.isRegularFile) unsupportedMediaType415("http://mmoon.org" / resourcePath)
+
+        else notFound404("http://mmoon.org" / resourcePath, None, resourceType)
+      }
     }
   }
 
-  private def serveFile(relPath : String, fileExt : String) = {
+  private def serveFile(resourcePath : String, fileExt : String, resourceType : String) = {
 
-    val file = (docRootFile/s"${relPath}${fileExt}").toJava
+    val file = docRootFile / s"${resourcePath}${fileExt}"
 
-    if (file.exists && !file.isDirectory)
+    if (file.isRegularFile) Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
 
-      Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
+    else {
+      val testFile = docRootFile / s"${resourcePath}.html"
 
-    else
-      NotFound("Sorry, the file could not be found")
+      if (testFile.isRegularFile) unsupportedMediaType415("http://mmoon.org" / resourcePath)
+
+      else notFound404("http://mmoon.org" / resourcePath, None, resourceType)
+    }
   }
 
-  private def checkInventoryResource(relPath: String) : Option[MimeType] = {
+  private def redirectInventoryResource(resourcePath : String, datasetPath : String) = {
 
-    val testUri = "http://127.0.0.1:8080/lodview"/relPath?("output" -> "application/n-triples")
+    def redirect(t: MimeType) = {
 
-    if (Source.fromURL(testUri).mkString.length == 0) None
+      val targetUri = s"http://mmoon.org/${resourcePath}${getFileExtension(t).getOrElse("")}"
+
+      SeeOther(targetUri, Map("Content-Type" -> t.toString))
+
+    }
+
+    val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
+
+    if (Source.fromURL(testUri).mkString.length == 0) notFound404(
+      "http://mmoon.org" / resourcePath, Some(datasetPath), "resource")
 
     else {
       val x = """[a-z]+/[a-z+-]+""".r
       val y = """[a-z]+/\*""".r
       val z = """\*/\*""".r
 
-      val supportedMimeTypes = List("application/rdf+xml", "text/html", "text/turtle", "application/n-triples", "application/n-triples")
+      val supportedMimeTypes = List("application/rdf+xml", "text/html", "text/turtle", "application/n-triples")
 
       for (t <- acceptedMimeTypes.sortWith(_.q > _.q).map(_.value)) t.toString match {
 
-        case x() => if(supportedMimeTypes.contains(t.toString)) return Some(t)
+        case x() => if(supportedMimeTypes.contains(t.toString)) redirect(t)
 
-        case y() => for (s <- supportedMimeTypes.map(new MimeType(_)) if t.`match`(s)) return Some(s)
+        case y() => for (s <- supportedMimeTypes.map(new MimeType(_)) if t.`match`(s)) redirect(t)
 
-        case z() => return Some(new MimeType("text/html"))
+        case z() => redirect(new MimeType("text/html"))
 
         case _ =>
       }
 
-      None
+      unsupportedMediaType415("http://mmoon.org" / resourcePath)
+
     }
   }
 
-  private def serveInventoryResource(relPath : String, fileExt : String) = {
+  private def serveInventoryResource(resourcePath : String, datasetPath : String, fileExt : String) = {
 
-    val t = getMimeType(fileExt).getOrElse(new MimeType)
+    val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
 
-    //It seems, there is no ProxyPass functionality included in Scalatra. So a little workaround is necessary.
-    fileExt match {
+    if (Source.fromURL(testUri).mkString.length == 0) notFound404(
+      "http://mmoon.org" / resourcePath, Some(datasetPath), "resource")
 
-      case ".html" => {
+    else {
 
-        val targetUri = "http://127.0.0.1:8080/lodview"/relPath
+      //It seems, there is no ProxyPass functionality included in Scalatra. So a little workaround is necessary.
+      fileExt match {
 
-        Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> "text/html"))
+        case ".html" => {
+
+          val targetUri = "http://127.0.0.1:8080/lodview" / resourcePath
+
+          Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> "text/html"))
+        }
+
+        case ".rdf" | ".nt" | ".ttl" => {
+
+          val t = getMimeType(fileExt).getOrElse(new MimeType)
+
+          val targetUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> t.getBaseType)
+
+          Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> t.toString))
+        }
+
+        case _ => unsupportedMediaType415("http://mmoon.org" / resourcePath)
       }
-
-      case _ => {
-
-        val targetUri = "http://127.0.0.1:8080/lodview"/relPath?("output" -> t.getBaseType)
-
-        Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> t.toString))
-      }
-
     }
+  }
+
+  private def notFound404(resourceUri : Uri, datasetPath : Option[String], resourceType : String) = {
+
+    //datasetPath.fold (None) {...} is not working. Why?
+    val datasetOption = datasetPath.fold {val tmp : Option[Uri] = None; tmp} { path =>
+      Source.fromURL("http://127.0.0.1:8080/lodview" / path ? ("output" -> "application/n-triples"))
+        .mkString.length == 0 match {
+
+        case false => Some("http://mmoon.org" / path)
+        case true => None
+      }
+    }
+
+    NotFound(ssp("NotFound", "resourceType" -> resourceType, "resourceUri" -> resourceUri,
+      "datasetUri" -> datasetOption), Map("Content-Type" -> "text/html"))
+
+  }
+
+  private def unsupportedMediaType415(resourceUri : Uri) = {
+    UnsupportedMediaType(ssp("UnsupportedMediaType", "resourceUri" -> resourceUri), Map("Content-Type" -> "text/html"))
+
   }
 
   private def getFileExtension(mimeType: MimeType) : Option[String] =
