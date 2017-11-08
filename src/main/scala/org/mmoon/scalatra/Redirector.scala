@@ -32,7 +32,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   get("""^/core(/[a-zA-Z0-9-_]+)?/?$""".r) { redirectStaticResource("core", "") }
 
   get("""^/core(/[a-zA-Z0-9-_]+)?(\.[a-z]+)$""".r)
-    { serveFile("core", multiParams("captures").apply(1), "") }
+    { println("test");serveFile("core", multiParams("captures").apply(1), "") }
 
 
   ////SCHEMA
@@ -129,8 +129,9 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   private def serveFile(resourcePath : String, fileExt : String, resourceType : String) = {
 
     val file = docRootFile / s"${resourcePath}${fileExt}"
+    println(file.getClass)
 
-    if (file.isRegularFile) Ok(file, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
+    if (file.isRegularFile) Ok(file.toJava, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
 
     else {
       val testFile = docRootFile / s"${resourcePath}.html"
