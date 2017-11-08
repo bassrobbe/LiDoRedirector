@@ -93,7 +93,7 @@
                                             <li>application/n-triples <a href=<%= resourceUri.toString %>><%= resourceUri.toString %>.nt</a></li>
                                         </ul>
                                     </p>
-                                    <p style="text-align: justify;">If you are sure, that the requested MimeType exists and should be displayed here, please get in touch with us under <a href="mailto:klimek@informatik.uni-leipzig.de">klimek@informatik.uni-leipzig.de</a>.</p>
+                                    <p style="text-align: justify;">If you are sure, that the requested format exists and should be displayed here, please get in touch with us under <a href="mailto:klimek@informatik.uni-leipzig.de">klimek@informatik.uni-leipzig.de</a>.</p>
                                     <p style="text-align: justify;">You find general information about the MMoOn-Project at our <a href="http://mmoon.org/">homepage</a>.</p>
                                 </div><!-- .entry-content -->
 

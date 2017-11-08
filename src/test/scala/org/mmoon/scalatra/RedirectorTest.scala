@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
   */
 class RedirectorTest extends FunSuite {
 
-  val acceptHeaders = List(
+  val supportedAcceptHeaders = List(
     ("application/rdf+xml","application/rdf+xml"),
     ("text/turtle","text/turtle"),
     ("application/n-triples","application/n-triples"),
@@ -22,9 +22,9 @@ class RedirectorTest extends FunSuite {
     ("text/html;q=0.9,application/rdf+xml;q=0.9,image/webp,application/*;q=0.8,*/*;q=0.8","text/html")
   )
 
-  val fileExtenisons = List(".rdf", ".ttl", ".nt", ".html")
+  val supportedFileExtenisons = List(".rdf", ".ttl", ".nt", ".html")
 
-  val testUris = List(
+  val supportedUris = List(
     "http://mmoon.org/core",
     "http://mmoon.org/core/AbsoluteAdjective",
     "http://mmoon.org/deu/schema/og",
@@ -33,11 +33,14 @@ class RedirectorTest extends FunSuite {
     "http://mmoon.org/deu/inventory/og/DerivedWord_verkaufen"
   )
 
+  //val unsupported
+
 
   test("URIs without file extension -> Content Negotiation") {
 
-    for (acceptHeader <- acceptHeaders; uri <- "http://mmoon.org/core/" :: testUris) {
-
+    for (acceptHeader <- supportedAcceptHeaders; uri <- "http://mmoon.org/core/" :: supportedUris) {
+      println(uri)
+      println(acceptHeader)
       val response: HttpResponse[String] = Http(uri).header("Accept", acceptHeader._1).asString
 
       assert(response.code == 303)
@@ -50,7 +53,7 @@ class RedirectorTest extends FunSuite {
 
   test("URIs with file extension -> MimeType is given via URI") {
 
-    for (fileExt <- fileExtenisons; uri <- testUris) {
+    for (fileExt <- supportedFileExtenisons; uri <- supportedUris) {
 
       val response: HttpResponse[String] = Http(s"${uri}${fileExt}").asString
 
