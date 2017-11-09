@@ -4,12 +4,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatra._
 import javax.activation.MimeType
-
 import better.files.File
 import com.netaporter.uri.Uri
 import com.netaporter.uri.dsl._
 import org.scalatra.scalate.ScalateSupport
-
 import scala.io.Source
 
 class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSupport {
@@ -29,19 +27,19 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   ////CORE
   //serve always full ontology
 
-  get("""^/core(/[a-zA-Z0-9-_]+)?/?$""".r) { redirectStaticResource("core", "") }
+  get("""^/core(/[a-zA-Z0-9äöüÄÖÜß_]+)?/?$""".r) { redirectStaticResource("core", "") }
 
-  get("""^/core(/[a-zA-Z0-9-_]+)?(\.[a-z]+)$""".r)
+  get("""^/core(/[a-zA-Z0-9äöüÄÖÜß_]+)?(\.[a-z]+)$""".r)
     { println("test");serveFile("core", multiParams("captures").apply(1), "") }
 
 
   ////SCHEMA
   //serve always full schema file
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9-_]+)?/?$""".r)
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9äöüÄÖÜß_]+)?/?$""".r)
     { redirectStaticResource(multiParams("captures").apply(0), "schema") }
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9-_]+)?(\.[a-z]+)$""".r)
+  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9äöüÄÖÜß_]+)?(\.[a-z]+)$""".r)
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(2), "schema") }
 
 
@@ -55,10 +53,10 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
     { serveFile(multiParams("captures").apply(0), multiParams("captures").apply(1), "dataset") }
 
   //serve just one resource
-  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9-_]+)/?$""".r)
+  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9äöüÄÖÜß_]+)/?$""".r)
     { redirectInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1)) }
 
-  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9-_]+)(\.[a-z]+)$""".r)
+  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9äöüÄÖÜß_]+)(\.[a-z]+)$""".r)
     { serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1), multiParams("captures").apply(2)) }
 
 
@@ -69,12 +67,8 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   post("""^/(lodview/[a-zA-Z/]+)$""".r)
     { Ok(Source.fromURL("http://127.0.0.1:8080/"/multiParams("captures").apply(0)).mkString) }
 
-  get("/test") {
-    SeeOther("http://mmoon.org/deu/inventory/og/DerivedWord_verkaufen.html", Map("Content-Type" -> "text/html"))
-  }
 
-
-  private def redirectStaticResource(resourcePath : String, resourceType : String) = {
+  private def redirectStaticResource(resourcePath : String, resourceType : String): ActionResult = {
 
     def checkResourceExistence(resourcePath : String, mimeTypes : List[MimeType]) : Option[MimeType] = {
 
@@ -126,7 +120,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
     }
   }
 
-  private def serveFile(resourcePath : String, fileExt : String, resourceType : String) = {
+  private def serveFile(resourcePath : String, fileExt : String, resourceType : String): ActionResult = {
 
     val file = docRootFile / s"${resourcePath}${fileExt}"
     println(file.getClass)
@@ -142,7 +136,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
     }
   }
 
-  private def redirectInventoryResource(resourcePath : String, datasetPath : String) = {
+  private def redirectInventoryResource(resourcePath : String, datasetPath : String): ActionResult = {
 
     val supportedMimeTypes = List("application/rdf+xml", "text/html", "text/turtle", "application/n-triples")
 
@@ -187,8 +181,6 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
 
           case _ => searchForSupportedMimeType(acceptedMimeTypes.tail)
         }
-
-
       }
     }
 
@@ -200,7 +192,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
     else searchForSupportedMimeType(acceptedMimeTypes.sortWith(_.q > _.q).map(_.value))
   }
 
-  private def serveInventoryResource(resourcePath : String, datasetPath : String, fileExt : String) = {
+  private def serveInventoryResource(resourcePath : String, datasetPath : String, fileExt : String): ActionResult = {
 
     val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
 
@@ -233,9 +225,10 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
     }
   }
 
-  private def notFound404(resourceUri : Uri, datasetPath : Option[String], resourceType : String) = {
+  private def notFound404(resourceUri : Uri, datasetPath : Option[String], resourceType : String): ActionResult = {
 
-    //datasetPath.fold (None) {...} is not working. Why?
+    //datasetPath.fold (None) {...} is not working properly. Why?
+
     val datasetOption = datasetPath.fold {val tmp : Option[Uri] = None; tmp} { path =>
       Source.fromURL("http://127.0.0.1:8080/lodview" / path ? ("output" -> "application/n-triples"))
         .mkString.length == 0 match {
@@ -250,10 +243,9 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
 
   }
 
-  private def unsupportedMediaType415(resourceUri : Uri) = {
-    UnsupportedMediaType(ssp("UnsupportedMediaType", "resourceUri" -> resourceUri), Map("Content-Type" -> "text/html"))
+  private def unsupportedMediaType415(resourceUri : Uri): ActionResult =
 
-  }
+    UnsupportedMediaType(ssp("UnsupportedMediaType", "resourceUri" -> resourceUri), Map("Content-Type" -> "text/html"))
 
   private def getFileExtension(mimeType: MimeType) : Option[String] =
 
