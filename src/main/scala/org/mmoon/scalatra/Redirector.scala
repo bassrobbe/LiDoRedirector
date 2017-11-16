@@ -137,7 +137,7 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
 
     if (file.isRegularFile) {
 
-      if (fileExt.equals(".html")) {
+      if (fileExt.equals(".html") && resourceName.isDefined) {
 
         val targetUri: Uri = "http://mmoon.org" / s"${resourcePath}.html"
 
