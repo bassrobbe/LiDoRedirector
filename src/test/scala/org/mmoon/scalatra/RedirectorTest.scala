@@ -34,7 +34,7 @@ class RedirectorTest extends FunSuite {
     "http://mmoon.org/deu/schema/og/Affix",
     "http://mmoon.org/deu/inventory/og",
     "http://mmoon.org/deu/inventory/og/DerivedWord_verkaufen",
-    "http://mmoon.org/deu/inventory/og/DerivedWord_Käufer"
+    //"http://mmoon.org/deu/inventory/og/DerivedWord_Käufer"
   )
 
   val unsupportedMimeTypes = List(
