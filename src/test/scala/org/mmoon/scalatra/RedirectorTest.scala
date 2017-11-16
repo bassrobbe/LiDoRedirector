@@ -33,7 +33,8 @@ class RedirectorTest extends FunSuite {
     "http://mmoon.org/deu/schema/og",
     "http://mmoon.org/deu/schema/og/Affix",
     "http://mmoon.org/deu/inventory/og",
-    "http://mmoon.org/deu/inventory/og/DerivedWord_verkaufen"
+    "http://mmoon.org/deu/inventory/og/DerivedWord_verkaufen",
+    //"http://mmoon.org/deu/inventory/og/DerivedWord_Käufer"
   )
 
   val unsupportedMimeTypes = List(
@@ -130,7 +131,7 @@ class RedirectorTest extends FunSuite {
   test("unsupported Mimetypes -> 415") {
     for (t <- unsupportedMimeTypes; uri <- supportedUris) {
 
-      val response: HttpResponse[String] = Http(s"${uri}").asString
+      val response: HttpResponse[String] = Http(uri).asString
 
       assert(response.code == 415)
 
@@ -142,7 +143,7 @@ class RedirectorTest extends FunSuite {
 
     for (uri <- nonExistentUris) {
 
-      val response: HttpResponse[String] = Http(s"${uri}").asString
+      val response: HttpResponse[String] = Http(uri).asString
 
       assert(response.code == 404)
 
