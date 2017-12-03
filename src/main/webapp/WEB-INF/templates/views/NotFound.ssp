@@ -89,7 +89,7 @@
                                     <p>You requested a representation for a MMoOn RDF <%= resourceType %>, but we could not found any information about this resource.
                                     <%@ val datasetUri : Option[com.netaporter.uri.Uri] %>
                                     <%  val datasetString = datasetUri.fold("") {
-                                            uri => s"""Nethertheless the dataset that should contain the requested resource is known and could be found <a href="${uri.toString}">here</a>."""
+                                            uri => s"""Nevertheless the dataset that should contain the requested resource is known and could be found <a href="${uri.toString}">here</a>."""
                                         }
                                     %>
                                     <%= unescape(datasetString) %></p>

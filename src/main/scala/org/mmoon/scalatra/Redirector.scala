@@ -27,11 +27,11 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   ////CORE
   //serve always full ontology
 
-  get("""^/core(/[a-zA-Z0-9äöüÄÖÜß_]+)?/?$""".r) {
+  get("""^/core(/[^/]+)?/?$""".r) {
     redirectStaticResource("core", Option(multiParams("captures").apply(0)), "");
   }
 
-  get("""^/core(/[a-zA-Z0-9äöüÄÖÜß_]+)?(\.[a-z]+)$""".r) {
+  get("""^/core(/[^/]+)?(\.[a-z]+)$""".r) {
     serveFile("core", Option(multiParams("captures").apply(0)), multiParams("captures").apply(1), "")
   }
 
@@ -39,12 +39,12 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   ////SCHEMA
   //serve always full schema file
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9äöüÄÖÜß_]+)?/?$""".r) {
+  get("""^/([a-z]+/schema/[^/]+)(/[^/]+)?/?$""".r) {
     redirectStaticResource(multiParams("captures").apply(0),
       Option(multiParams("captures").apply(1)), "schema")
   }
 
-  get("""^/([a-z]+/schema/[a-z]+)(/[a-zA-Z0-9äöüÄÖÜß_]+)?(\.[a-z]+)$""".r) {
+  get("""^/([a-z]+/schema/[^/]+)(/[^/]+)?(\.[a-z]+)$""".r) {
     serveFile(multiParams("captures").apply(0), Option(multiParams("captures").apply(1)), multiParams("captures").apply(2), "schema")
   }
 
@@ -52,19 +52,19 @@ class Redirector extends MmoonredirectorStack with LazyLogging with ScalateSuppo
   ////INVENTORY
   //serve full dataset
 
-  get("""^/([a-z]+/inventory/[a-z]+)/?$""".r)
+  get("""^/([a-z]+/inventory/[^/]+)/?$""".r)
     { redirectStaticResource(multiParams("captures").apply(0), None, "dataset") }
 
-  get("""^/([a-z]+/inventory/[a-z]+)(\.[a-z]+)$""".r) {
+  get("""^/([a-z]+/inventory/[^/]+)(\.[a-z]+)$""".r) {
     serveFile(multiParams("captures").apply(0), None, multiParams("captures").apply(1), "dataset")
   }
 
   //serve just one resource
-  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9äöüÄÖÜß_]+)/?$""".r) {
+  get("""^/(([a-z]+/inventory/[^/]+/)[^/]+)/?$""".r) {
     redirectInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1))
   }
 
-  get("""^/(([a-z]+/inventory/[a-z]+/)[a-zA-Z0-9äöüÄÖÜß_]+)(\.[a-z]+)$""".r) {
+  get("""^/(([a-z]+/inventory/[^/]+/)[^/]+)(\.[a-z]+)$""".r) {
     serveInventoryResource(multiParams("captures").apply(0), multiParams("captures").apply(1), multiParams("captures").apply(2))
   }
 
