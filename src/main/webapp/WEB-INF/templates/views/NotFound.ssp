@@ -86,15 +86,9 @@
                                 <div class="entry-content" itemprop="text">
                                     <%@ val resourceType : String %>
                                     <h3 style="text-align: justify;">The requested <%= resourceType %> could not be found.</h3>
-                                    <p>You requested a representation for a MMoOn RDF <%= resourceType %>, but we could not found any information about this resource.
-                                    <%@ val datasetUri : Option[com.netaporter.uri.Uri] %>
-                                    <%  val datasetString = datasetUri.fold("") {
-                                            uri => s"""Nevertheless the dataset that should contain the requested resource is known and could be found <a href="${uri.toString}">here</a>."""
-                                        }
-                                    %>
-                                    <%= unescape(datasetString) %></p>
+                                    <p>You requested a representation for a LiDoRDF <%= resourceType %>, but we could not found any information about this resource.
                                     <p style="text-align: justify;">If you are sure, that the resource exists and should be displayed here, please get in touch with us under <a href="mailto:klimek@informatik.uni-leipzig.de">klimek@informatik.uni-leipzig.de</a>.</p>
-                                    <p style="text-align: justify;">You find general information about the MMoOn-Project at our <a href="http://mmoon.org/">homepage</a>.</p>
+                                    <p style="text-align: justify;">You find general information about the LiDoRDF-Project at our <a href="http://lidordf.aksw.org/">homepage</a>.</p>
                                 </div><!-- .entry-content -->
 
                             </div><!-- .inside-article -->

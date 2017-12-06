@@ -8,9 +8,9 @@ ScalatraPlugin.scalatraSettings
 
 scalateSettings
 
-organization := "org.mmoon"
+organization := "org.aksw"
 
-name := "MMoOnRedirector"
+name := "LiDoRedirector"
 
 version := "0.1.0-SNAPSHOT"
 

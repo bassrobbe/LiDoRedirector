@@ -1,4 +1,4 @@
-import org.mmoon.scalatra.Redirector
+import org.aksw.scalatra.Redirector
 import org.scalatra._
 
 import javax.servlet.ServletContext
