@@ -11,7 +11,7 @@ import com.netaporter.uri.dsl._
 import org.scalatra.scalate.ScalateSupport
 
 import scala.io.Source
-import scalaj.http.{Http, HttpResponse}
+import scalaj.http.Http
 
 class Redirector extends LidoredirectorStack with LazyLogging with ScalateSupport {
 
@@ -23,7 +23,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
 
   //ONTOLOGY
-  //serve onlystatic ontology files
+  //serve only static ontology files
   get("""^/ontology(/[^/]+)?/?$""".r) {
     redirectStaticResource("ontology", Option(multiParams("captures").apply(0)));
   }
@@ -35,11 +35,11 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
   //DATA
   //serve representations of term and concept resources, use LodView
-  get("""^/((Term|Concept)/[0-9]+)/?$""".r) {
+  get("""^/(resource/(Term|Concept)_-?[0-9]+)/?$""".r) {
     redirectDataResource(multiParams("captures").apply(0))
   }
 
-  get("""^/((Term|Concept)/[0-9]+)(\.[a-z]+)$""".r) {
+  get("""^/(resource/(Term|Concept)_-?[0-9]+)(\.[a-z]+)$""".r) {
     serveDataResource(multiParams("captures").apply(0), multiParams("captures").apply(2))
   }
 
@@ -51,8 +51,15 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
   post("/sparql") { handleSparqlPath(params.get("query")) }
 
 
+  //BLAZEGRAPH
+  get("/blazegraph/?") {
+    contentFromUri("http://127.0.0.1:3000/sparql", Map("Content-Type" -> "text/html"))
+  }
+
   //GRAPHICAL USER INTERFACE
   //redirect graphical user interface to Puma
+  get("/?") { contentFromUri("http://127.0.0.1:3000/glossary/", Map("Content-Type" -> "text/html")) }
+
   get("""/(glossary.*)""".r) {
 
     val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
