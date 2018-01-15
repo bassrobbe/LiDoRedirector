@@ -58,13 +58,15 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
   //GRAPHICAL USER INTERFACE
   //redirect graphical user interface to Puma
-  get("/?") { contentFromUri("http://127.0.0.1:3000/glossary/", Map("Content-Type" -> "text/html")) }
-
-  get("""/(glossary.*)""".r) {
+  get("""/(glossary/.*)""".r) {
 
     val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
     contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
   }
+
+  get("/glossary/?") { contentFromUri("http://127.0.0.1:3000/glossary/glossary/", Map("Content-Type" -> "text/html")) }
+
+  get("/?") { contentFromUri("http://127.0.0.1:3000/glossary/", Map("Content-Type" -> "text/html")) }
 
   get("""/(assets/.*)""".r) {
     val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
@@ -254,7 +256,6 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
                               parameter : Map[String, String] = Map.empty) : ActionResult = {
 
     val con = Http(uri).params(parameter).headers(httpHeaders).asString
-
     Ok(con.body, con.headers.get("ContentType").fold (Map[String, String]()) { t => Map("Content-Type" -> t.head) })
   }
 
