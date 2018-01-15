@@ -66,6 +66,11 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
     contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
   }
 
+  get("""/(assets/.*)""".r) {
+    val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
+    contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
+  }
+
 
   //necessary to serve .css and .js files for LodView interface
   get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r) {
@@ -113,12 +118,12 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
       case Some(mimeType) => {
 
-        val targetUri = "http://mmoon.org" / s"${resourcePath}${resourceName.getOrElse("")}${getFileExtension(mimeType).get}"
+        val targetUri = "http://lidordf.aksw.org" / s"${resourcePath}${resourceName.getOrElse("")}${getFileExtension(mimeType).get}"
 
         SeeOther(targetUri, Map("Content-Type" -> mimeType.toString))
       }
 
-      case None => unsupportedMediaType415("http://mmoon.org" / resourcePath)
+      case None => unsupportedMediaType415("http://lidordf.aksw.org" / resourcePath)
     }
   }
 
@@ -130,13 +135,13 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
       if (fileExt.equals(".html") && resourceName.isDefined) {
 
-        val targetUri: Uri = "http://mmoon.org" / s"${resourcePath}.html"
+        val targetUri: Uri = "http://lidordf.aksw.org" / s"${resourcePath}.html"
 
         Found(resourceName.fold(targetUri) { name => targetUri `#` name.substring(1) }, Map("Content-Type" -> "text/html"))
 
       } else Ok(file.toJava, Map("Content-Type" -> getMimeType(fileExt).getOrElse("").toString))
 
-    } else unsupportedMediaType415("http://mmoon.org" / resourcePath)
+    } else unsupportedMediaType415("http://lidordf.aksw.org" / resourcePath)
   }
 
   private def redirectDataResource(resourcePath : String): ActionResult = {
@@ -190,7 +195,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
     val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
 
     if (Source.fromURL(testUri).mkString.length == 0) notFound404(
-      "http://mmoon.org" / resourcePath,"resource")
+      "http://lidordf.aksw.org" / resourcePath,"resource")
 
     else searchForSupportedMimeType(acceptedMimeTypes.sortWith(_.q > _.q).map(_.value))
   }
@@ -200,7 +205,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
     val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
 
     if (Source.fromURL(testUri).mkString.length == 0) notFound404(
-      "http://mmoon.org" / resourcePath, "resource")
+      "http://lidordf.aksw.org" / resourcePath, "resource")
 
     else {
 
@@ -223,7 +228,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
           Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> t.toString))
         }
 
-        case _ => unsupportedMediaType415("http://mmoon.org" / resourcePath)
+        case _ => unsupportedMediaType415("http://lidordf.aksw.org" / resourcePath)
       }
     }
   }
@@ -231,7 +236,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
   private def handleSparqlPath(query : Option[String]) : ActionResult = {
 
     query.fold ( contentFromUri("http://127.0.0.1:3000/sparql", Map("Content-Type" -> "text/html")) ) { query =>
-      contentFromUri("http://mmoon.org/sparql", Map("Content-Type" -> "application/sparql-results+json"), Map("query" -> query))
+      contentFromUri("http://lidordf.aksw.org/sparql", Map("Content-Type" -> "application/sparql-results+json"), Map("query" -> query))
     }
     //"http://127.0.0.1:9999/blazegraph/namespace/lido/sparql" ? (query" -> params("query"))
   }
