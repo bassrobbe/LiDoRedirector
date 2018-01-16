@@ -255,8 +255,8 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
   private def contentFromUri (uri : Uri, httpHeaders : Map[String, String] = Map.empty,
                               parameter : Map[String, String] = Map.empty) : ActionResult = {
 
-    val con = Http(uri).params(parameter).headers(httpHeaders).asString
-    Ok(con.body, con.headers.get("ContentType").fold (Map[String, String]()) { t => Map("Content-Type" -> t.head) })
+    val con = Http(uri).params(parameter).headers(httpHeaders).asString.body
+    Ok(con, httpHeaders)
   }
 
 
