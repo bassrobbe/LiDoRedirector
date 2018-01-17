@@ -35,11 +35,11 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
   //DATA
   //serve representations of term and concept resources, use LodView
-  get("""^/(resource/(Term|Concept)_-?[0-9]+)/?$""".r) {
+  get("""^/(resource/(Term|Concept)/-?[0-9]+)/?$""".r) {
     redirectDataResource(multiParams("captures").apply(0))
   }
 
-  get("""^/(resource/(Term|Concept)_-?[0-9]+)(\.[a-z]+)$""".r) {
+  get("""^/(resource/(Term|Concept)/-?[0-9]+)(\.[a-z]+)$""".r) {
     serveDataResource(multiParams("captures").apply(0), multiParams("captures").apply(2))
   }
 
@@ -75,13 +75,13 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
 
   //necessary to serve .css and .js files for LodView interface
-  get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r) {
-    Ok(Source.fromURL("http://127.0.0.1:8080" / multiParams("captures").apply(0)).mkString)
-  }
-
-  post("""^/(lodview/[a-zA-Z/]+)$""".r) {
-    Ok(Source.fromURL("http://127.0.0.1:8080/" / multiParams("captures").apply(0)).mkString)
-  }
+//  get("""^/(lodview/[a-zA-Z/\.-_]+)$""".r) {
+//    Ok(Source.fromURL("http://127.0.0.1:8080" / multiParams("captures").apply(0)).mkString)
+//  }
+//
+//  post("""^/(lodview/[a-zA-Z/]+)$""".r) {
+//    Ok(Source.fromURL("http://127.0.0.1:8080/" / multiParams("captures").apply(0)).mkString)
+//  }
 
 
   private def redirectStaticResource(resourcePath : String, resourceName : Option[String]): ActionResult = {
