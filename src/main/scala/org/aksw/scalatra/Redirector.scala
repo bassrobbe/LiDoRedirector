@@ -23,21 +23,26 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
 
   //ONTOLOGY
-  get("""^/ontology(/[a-zA-Z]+)?/?$""".r) {
-    redirectStaticResource("ontology", Option(multiParams("captures").apply(0)));
-  }
+//  get("""^/ontology(/[a-zA-Z]+)?/?$""".r) {
+//    redirectStaticResource("ontology", Option(multiParams("captures").apply(0)));
+//  }
+//
+//  get("""^/ontology(/[a-zA-Z]+)?(\.[a-z]+)$""".r) {
+//    val format = multiParams("capture").apply(1)
+//    val targetFile = docRootFile / "ontology" / s"lido${format}"
+//    if (mimeTypeMapping.map(_._1).contains(format)) {
+//      Ok(targetFile.toJava, Map("Content-Type" -> getMimeType(format).get.toString))
+//    } else {
+//      val res = multiParams("capture").apply(0)
+//      val targetUri = s"http://lidordf.aksw.org/ontology${res}${format}"
+//      unsupportedMediaType415(targetUri)
+//    }
+//    //serveFile("ontology", Option(multiParams("captures").apply(0)), multiParams("captures").apply(1))
+//  }
 
-  get("""^/ontology(/[a-zA-Z]+)?(\.[a-z]+)$""".r) {
-    val format = multiParams("capture").apply(1)
-    val targetFile = docRootFile / "ontology" / s"lido${format}"
-    if (mimeTypeMapping.map(_._1).contains(format)) {
-      Ok(targetFile.toJava, Map("Content-Type" -> getMimeType(format).get.toString))
-    } else {
-      val res = multiParams("capture").apply(0)
-      val targetUri = s"http://lidordf.aksw.org/ontology${res}${format}"
-      unsupportedMediaType415(targetUri)
-    }
-    //serveFile("ontology", Option(multiParams("captures").apply(0)), multiParams("captures").apply(1))
+  get("""^/ontology(.*)$""") {
+    val targetFile = docRootFile / "ontology/lido.ttl"
+    Ok(targetFile.toJava, Map("Content-Type" -> "text/turtle"))
   }
 
   get("""^/downloads/metadata/lido_dataid(.ttl)?$""".r) {
@@ -87,16 +92,6 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
   get("/sparql(.*)") {
     val targetUri = "http://127.0.0.1:3000/sparql"
     contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
-  }
-
-  get("/glossary/gselect") {
-    val targetUri = "http://127.0.0.1:3000/glossary/gselect"
-    contentFromUri(targetUri, Map.empty)
-  }
-
-  get("""/(glossary/assets/.*)""".r) {
-    val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
-    contentFromUri(targetUri, Map.empty)
   }
 
 
@@ -174,8 +169,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
       val targetUri = s"http://lidordf.aksw.org/${resourceType}/${resourcePath}${getFileExtension(t).getOrElse("")}"
 
-//      SeeOther(targetUri, Map("Content-Type" -> t.toString))
-      Ok(targetUri.toString)
+      SeeOther(targetUri, Map("Content-Type" -> t.toString))
     }
 
     def searchForSupportedMimeType(acceptedMimeTypes : List[MimeType]): ActionResult = {
