@@ -10,7 +10,7 @@
 <nav class="navbar navbar-default" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
-            <a class="navbar-brand" href="/glossary/">
+            <a class="navbar-brand" href="http://lidordf.aksw.org/glossary">
                 Linguistic Documentation</a>
         </div>
         <ul class="nav navbar-nav navbar-right">
@@ -35,7 +35,7 @@
 </div>
 <p>
 This initiative has been created and is maintained by the <a href="http://aksw.org/Groups/KILT.html">Knowledge Integration and Linked Data Technologies (KILT) Group</a> at the University of Leipzig, Germany.<br />
-Developed by: Bettina Klimek, Robert Sch&auml;dlich, Edwin Knese, Dustin Kr&ouml;ger, Benedikt Elßmann<br />
+Developed by: Bettina Klimek, Robert Sch&auml;dlich, Dustin Kr&ouml;ger<br />
     Contact: Bettina Klimek: <a href="mailto:klimek@informatik.uni-leipzig.de">klimek@informatik.uni-leipzig.de</a>
 
 </p>
