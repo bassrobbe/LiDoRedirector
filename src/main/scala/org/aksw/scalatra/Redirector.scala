@@ -75,25 +75,6 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
      contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
   }
 
-  get("""^/(glossary/(Concept|Term|Language)_[0-9_\-]+)(\.html)?$""".r) {
-    val targetUri = "http://127.0.0.1:3000" / multiParams("captures").apply(0)
-    contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
-  }
-
-  get("/glossary/?") {
-    val targetUri = "http://127.0.0.1:3000/glossary"
-    contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
-  }
-
-  get("/?") {
-    contentFromUri("http://127.0.0.1:3000/", Map("Content-Type" -> "text/html"))
-  }
-
-  get("/sparql(.*)") {
-    val targetUri = "http://127.0.0.1:3000/sparql"
-    contentFromUri(targetUri, Map("Content-Type" -> "text/html"))
-  }
-
 
   private def redirectStaticResource(resourcePath : String, resourceName : Option[String]): ActionResult = {
 
