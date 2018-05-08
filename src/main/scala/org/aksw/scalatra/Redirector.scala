@@ -210,7 +210,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
       }
     }
 
-    val testUri = "http://127.0.0.1:8080/lodview/resource" / resourcePath ? ("output" -> "application/n-triples")
+    val testUri = "http://127.0.0.1:8081/lodview/resource" / resourcePath ? ("output" -> "application/n-triples")
 
     if (Source.fromURL(testUri).mkString.length == 0) notFound404(
       "http://lidordf.aksw.org" / resourceType / resourcePath, "resource")
@@ -220,7 +220,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
   private def serveDataResource(resourcePath : String, fileExt : String): ActionResult = {
 
-    val testUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> "application/n-triples")
+    val testUri = "http://127.0.0.1:8081/lodview" / resourcePath ? ("output" -> "application/n-triples")
 
     if (Source.fromURL(testUri).mkString.length == 0) notFound404(
       "http://lidordf.aksw.org" / resourcePath, "resource")
@@ -232,7 +232,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
         case ".html" => {
 
-          val targetUri = "http://127.0.0.1:8080/lodview" / resourcePath
+          val targetUri = "http://127.0.0.1:8081/lodview" / resourcePath
           Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> "text/html"))
         }
 
@@ -240,7 +240,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 
           val t = getMimeType(fileExt).getOrElse(new MimeType)
 
-          val targetUri = "http://127.0.0.1:8080/lodview" / resourcePath ? ("output" -> t.getBaseType)
+          val targetUri = "http://127.0.0.1:8081/lodview" / resourcePath ? ("output" -> t.getBaseType)
 
           Ok(Source.fromURL(targetUri).mkString, Map("Content-Type" -> t.toString))
         }
