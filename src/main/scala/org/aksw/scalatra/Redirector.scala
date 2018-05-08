@@ -40,7 +40,7 @@ class Redirector extends LidoredirectorStack with LazyLogging with ScalateSuppor
 //    //serveFile("ontology", Option(multiParams("captures").apply(0)), multiParams("captures").apply(1))
 //  }
 
-  get("""^/ontology(.*)$""") {
+  get("/ontology*") {
     val targetFile = docRootFile / "ontology/lido.ttl"
     Ok(targetFile.toJava, Map("Content-Type" -> "text/turtle"))
   }
